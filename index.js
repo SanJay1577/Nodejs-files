@@ -3,6 +3,7 @@
 import express from "express";
 import {MongoClient} from "mongodb";
 import dotenv from "dotenv"
+import { getMovies, postMovie, filterById, deleteMovieById } from "./helper.js"; // inde we have to import and export in .js files 
 dotenv.config();
 console.log(process.env)
 const app = express();
@@ -83,7 +84,7 @@ async function createConnection(){
     return client;
 }
 
-const client = await createConnection();
+export const client = await createConnection();
 //interceptor:
 app.use(express.json()); 
 //express.json is the inbuild middleware 
@@ -115,11 +116,7 @@ app.get("/movies", async (request, response)=>{
         request.query.rating = +request.query.rating;
     }
     console.log(request.query);
-    const movie = await client
-    .db("b29wd")
-    .collection("movies")
-    .find(request.query)
-    .toArray(); // to convert from cursor to array to load the data.
+    const movie = await getMovies(request); // to convert from cursor to array to load the data.
     response.send(movie); 
 }); 
 
@@ -128,10 +125,7 @@ app.get("/movies", async (request, response)=>{
 app.post("/movies", async (request, response)=>{ //`we need to use express.json as a middle ware to tell the postman it's a jason data that is inserted in the above creteConnection
     const newMovies = request.body;
     console.log(newMovies);
-    const result = await client
-    .db("b29wd")
-    .collection("movies")
-    .insertMany(newMovies);
+    const result = await postMovie(newMovies);
     response.send(result); 
 }); 
 
@@ -146,7 +140,7 @@ app.get("/movies/:id", async (request, response)=>{
 
     // const movie = movies.find((mv)=> mv.id === id); 
     //fins tag will get the object without use of filter: 
-    const movie = await client.db("b29wd").collection("movies").findOne({id:id});
+    const movie = await filterById(id);
 
     console.log(request.params); 
     movie 
@@ -159,7 +153,7 @@ app.delete("/movies/:id", async (request, response)=>{
     const {id} = request.params;
     console.log(id);
 
-    const movie = await client.db("b29wd").collection("movies").deleteOne({id:id});
+    const movie = await deleteMovieById(id);
 
     console.log(request.params); 
     response.send(movie);
@@ -168,5 +162,6 @@ app.delete("/movies/:id", async (request, response)=>{
 
 app.listen(PORT, ()=>console.log(`Server Started : localhost:${PORT}
                                   Movies Port     : localhost:${PORT}/movies`)); 
+
 
 
